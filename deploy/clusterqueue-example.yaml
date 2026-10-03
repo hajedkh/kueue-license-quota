@@ -1,0 +1,56 @@
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata:
+  name: default
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata:
+  name: licensed-compute
+spec:
+  namespaceSelector: {}
+  resourceGroups:
+  - coveredResources: ["cpu", "memory", "nvidia.com/gpu", "licenses.example.com/fep"]
+    flavors:
+    - name: default
+      resources:
+      - name: cpu
+        nominalQuota: 512
+      - name: memory
+        nominalQuota: 4Ti
+      - name: nvidia.com/gpu
+        nominalQuota: 16
+      - name: licenses.example.com/fep
+        nominalQuota: 0          # the reconciler owns this line
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: LocalQueue
+metadata:
+  name: team-a
+  namespace: default
+spec:
+  clusterQueue: licensed-compute
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fep-run-42
+  namespace: default
+  labels:
+    kueue.x-k8s.io/queue-name: team-a
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: solver
+        image: busybox
+        command: ["sh", "-c", "echo running; sleep 60"]
+        resources:
+          requests:
+            nvidia.com/gpu: "1"
+            licenses.example.com/fep: "4"
+          limits:
+            nvidia.com/gpu: "1"
+            licenses.example.com/fep: "4"
