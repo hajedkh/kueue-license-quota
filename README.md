@@ -2,6 +2,8 @@
 
 A small controller that keeps a Kueue ClusterQueue quota in sync with a license server.
 
+![Kueue Prometheus Pattern](./the-pattern-kueue-prometheus%20%282%29%20%283%29.jpg)
+
 Every 30 seconds it reads how many license tokens are free (from Prometheus), adds back
 the tokens already held by admitted jobs, subtracts a safety margin, and writes the result
 into `nominalQuota` of one resource on one ClusterQueue.
